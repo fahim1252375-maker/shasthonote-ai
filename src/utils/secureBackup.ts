@@ -29,6 +29,12 @@ interface SecureBackupEnvelope {
 const encoder = new TextEncoder();
 const decoder = new TextDecoder('utf-8', { fatal: true });
 
+function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  return buffer;
+}
+
 function getSubtleCrypto(): SubtleCrypto {
   if (!globalThis.crypto?.subtle) {
     throw new Error('Secure backup encryption requires a modern browser with Web Crypto (HTTPS or localhost).');
@@ -66,7 +72,7 @@ async function deriveKey(passphrase: string, salt: Uint8Array): Promise<CryptoKe
   const subtle = getSubtleCrypto();
   const material = await subtle.importKey('raw', encoder.encode(passphrase), 'PBKDF2', false, ['deriveKey']);
   return subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: BACKUP_PBKDF2_ITERATIONS, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: toArrayBuffer(salt), iterations: BACKUP_PBKDF2_ITERATIONS, hash: 'SHA-256' },
     material,
     { name: 'AES-GCM', length: 256 },
     false,
@@ -95,7 +101,7 @@ export async function encryptBackupText(plaintext: string, passphrase: string): 
   const iv = crypto.getRandomValues(new Uint8Array(12));
   const key = await deriveKey(passphrase, salt);
   const encrypted = await getSubtleCrypto().encrypt(
-    { name: 'AES-GCM', iv, additionalData: encoder.encode(AAD), tagLength: 128 },
+    { name: 'AES-GCM', iv: toArrayBuffer(iv), additionalData: encoder.encode(AAD), tagLength: 128 },
     key,
     encoder.encode(plaintext),
   );
@@ -152,7 +158,7 @@ export async function decryptBackupText(encryptedText: string, passphrase: strin
   try {
     const key = await deriveKey(passphrase, salt);
     const decrypted = await getSubtleCrypto().decrypt(
-      { name: 'AES-GCM', iv, additionalData: encoder.encode(AAD), tagLength: 128 },
+      { name: 'AES-GCM', iv: toArrayBuffer(iv), additionalData: encoder.encode(AAD), tagLength: 128 },
       key,
       ciphertext,
     );

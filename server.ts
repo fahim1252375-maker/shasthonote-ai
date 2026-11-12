@@ -89,7 +89,7 @@ type FirebaseIdTokenPayload = {
   auth_time: number;
   email?: string;
 };
-type FirebaseJwk = JsonWebKey & { kid?: string; alg?: string; use?: string };
+type FirebaseJwk = JsonWebKey & { [key: string]: unknown; kid?: string; alg?: string; use?: string };
 class FirebaseKeyServiceError extends Error {}
 let firebaseJwksCache: { keys: FirebaseJwk[]; expiresAt: number } | null = null;
 

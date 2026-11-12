@@ -36,7 +36,7 @@ function createFirestore(): ReturnType<typeof getFirestore> {
     );
   } catch (error) {
     console.warn('Persistent Firestore cache is unavailable; using in-memory cache instead:', error);
-    return getFirestore(app, databaseId);
+    return databaseId ? getFirestore(app, databaseId) : getFirestore(app);
   }
 }
 

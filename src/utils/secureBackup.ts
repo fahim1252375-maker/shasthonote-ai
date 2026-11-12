@@ -160,7 +160,7 @@ export async function decryptBackupText(encryptedText: string, passphrase: strin
     const decrypted = await getSubtleCrypto().decrypt(
       { name: 'AES-GCM', iv: toArrayBuffer(iv), additionalData: encoder.encode(AAD), tagLength: 128 },
       key,
-      ciphertext,
+      toArrayBuffer(ciphertext),
     );
     const plaintext = decoder.decode(decrypted);
     if (encoder.encode(plaintext).byteLength > MAX_PLAINTEXT_BYTES) {

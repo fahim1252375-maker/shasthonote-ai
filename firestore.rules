@@ -1,0 +1,429 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Default Deny Catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitives & Hardened Global Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[A-Za-z0-9_-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // 1. User Profile Validation (UserProfile interface)
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['userId', 'email']) &&
+        data.keys().hasOnly([
+          'userId',
+          'email',
+          'displayName',
+          'photoURL',
+          'preferredLanguage'
+        ]) &&
+        data.userId is string && data.userId == request.auth.uid &&
+        data.email is string && data.email.size() <= 256 &&
+        (!('displayName' in data) || (data.displayName is string && data.displayName.size() <= 128)) &&
+        (!('photoURL' in data) || (data.photoURL is string && data.photoURL.size() <= 2048)) &&
+        (!('preferredLanguage' in data) || (data.preferredLanguage in ['en', 'bn']));
+    }
+
+    // 2. Health Note Validation (HealthNote interface)
+    function isValidHealthNote(data) {
+      return data.keys().hasAll([
+          'id',
+          'userId',
+          'title',
+          'language',
+          'chiefComplaint',
+          'patientDescription',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'userId',
+          'title',
+          'language',
+          'chiefComplaint',
+          'patientDescription',
+          'onsetDate',
+          'duration',
+          'symptoms',
+          'reportedMedicalHistory',
+          'existingMedications',
+          'allergies',
+          'questionsForDoctor',
+          'structuredSummary',
+          'patientSummary',
+          'doctorBrief',
+          'audioTranscript',
+          'missingInformationFlags',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.userId is string && data.userId == request.auth.uid &&
+        data.title is string && data.title.size() <= 256 &&
+        data.language in ['en', 'bn', 'mixed'] &&
+        data.chiefComplaint is string && data.chiefComplaint.size() <= 2000 &&
+        data.patientDescription is string && data.patientDescription.size() <= 50000 &&
+        data.status in ['draft', 'ready', 'archived'] &&
+        data.createdAt is string && data.createdAt.size() <= 64 &&
+        data.updatedAt is string && data.updatedAt.size() <= 64 &&
+        (!('onsetDate' in data) || (data.onsetDate is string && data.onsetDate.size() <= 256)) &&
+        (!('duration' in data) || (data.duration is string && data.duration.size() <= 256)) &&
+        (!('symptoms' in data) || (data.symptoms is string && data.symptoms.size() <= 5000)) &&
+        (!('reportedMedicalHistory' in data) || (data.reportedMedicalHistory is string && data.reportedMedicalHistory.size() <= 10000)) &&
+        (!('existingMedications' in data) || (data.existingMedications is string && data.existingMedications.size() <= 10000)) &&
+        (!('allergies' in data) || (data.allergies is string && data.allergies.size() <= 5000)) &&
+        (!('questionsForDoctor' in data) || (data.questionsForDoctor is string && data.questionsForDoctor.size() <= 10000)) &&
+        (!('structuredSummary' in data) || (data.structuredSummary is string && data.structuredSummary.size() <= 50000)) &&
+        (!('patientSummary' in data) || (data.patientSummary is string && data.patientSummary.size() <= 50000)) &&
+        (!('doctorBrief' in data) || (data.doctorBrief is string && data.doctorBrief.size() <= 50000)) &&
+        (!('audioTranscript' in data) || (data.audioTranscript is string && data.audioTranscript.size() <= 100000)) &&
+        (!('missingInformationFlags' in data) || (data.missingInformationFlags is list && data.missingInformationFlags.size() <= 50));
+    }
+
+    // 3. Source Document Validation (SourceDocument interface)
+    function isValidSourceDocument(data) {
+      return data.keys().hasAll([
+          'id',
+          'userId',
+          'name',
+          'category',
+          'fileType',
+          'extractedText',
+          'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'userId',
+          'name',
+          'category',
+          'fileType',
+          'extractedText',
+          'analysisSummary',
+          'tags',
+          'createdAt',
+          'ocrConfidence',
+          'findings'
+        ]) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.userId is string && data.userId == request.auth.uid &&
+        data.name is string && data.name.size() <= 256 &&
+        data.category in ['lab_report', 'prescription', 'discharge_summary', 'educational', 'literature'] &&
+        data.fileType in ['pdf', 'image', 'text'] &&
+        data.extractedText is string && data.extractedText.size() <= 500000 &&
+        data.createdAt is string && data.createdAt.size() <= 64 &&
+        (!('analysisSummary' in data) || (data.analysisSummary is string && data.analysisSummary.size() <= 50000)) &&
+        (!('tags' in data) || (data.tags is string && data.tags.size() <= 1000)) &&
+        (!('ocrConfidence' in data) || (data.ocrConfidence is string && data.ocrConfidence.size() <= 64)) &&
+        (!('findings' in data) || (
+          data.findings is list &&
+          data.findings.size() <= 100 &&
+          (data.findings.size() == 0 || (
+            data.findings[0] is map &&
+            data.findings[0].keys().hasAll(['testOrItem', 'value', 'status']) &&
+            data.findings[0].keys().hasOnly(['testOrItem', 'value', 'referenceRange', 'status']) &&
+            data.findings[0].testOrItem is string && data.findings[0].testOrItem.size() <= 256 &&
+            data.findings[0].value is string && data.findings[0].value.size() <= 256 &&
+            data.findings[0].status is string && data.findings[0].status.size() <= 64 &&
+            (!('referenceRange' in data.findings[0]) || (data.findings[0].referenceRange is string && data.findings[0].referenceRange.size() <= 256))
+          ))
+        ));
+    }
+
+    // 4. Appointment Validation (Appointment interface)
+    function isValidAppointment(data) {
+      return data.keys().hasAll([
+          'id',
+          'userId',
+          'doctorName',
+          'specialty',
+          'dateTime',
+          'location',
+          'status',
+          'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'userId',
+          'doctorName',
+          'specialty',
+          'dateTime',
+          'location',
+          'linkedNoteId',
+          'checklist',
+          'checklistDone',
+          'status',
+          'createdAt'
+        ]) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.userId is string && data.userId == request.auth.uid &&
+        data.doctorName is string && data.doctorName.size() <= 256 &&
+        data.specialty is string && data.specialty.size() <= 128 &&
+        data.dateTime is string && data.dateTime.size() <= 64 &&
+        data.location is string && data.location.size() <= 256 &&
+        data.status in ['upcoming', 'completed', 'cancelled'] &&
+        data.createdAt is string && data.createdAt.size() <= 64 &&
+        (!('linkedNoteId' in data) || (data.linkedNoteId is string && data.linkedNoteId.size() <= 128)) &&
+        (!('checklist' in data) || (data.checklist is list && data.checklist.size() <= 50)) &&
+        (!('checklistDone' in data) || (data.checklistDone is list && data.checklistDone.size() <= 50));
+    }
+
+    // 5. Study Resource Validation (StudyResource interface)
+    function isValidStudyResource(data) {
+      return data.keys().hasAll([
+          'id',
+          'userId',
+          'title',
+          'type',
+          'topic',
+          'contentJson',
+          'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'userId',
+          'title',
+          'type',
+          'topic',
+          'contentJson',
+          'sourceDocumentId',
+          'createdAt'
+        ]) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.userId is string && data.userId == request.auth.uid &&
+        data.title is string && data.title.size() <= 256 &&
+        data.type in ['flashcards', 'quiz', 'mindmap', 'study_guide'] &&
+        data.topic is string && data.topic.size() <= 256 &&
+        data.contentJson is string && data.contentJson.size() <= 100000 &&
+        data.createdAt is string && data.createdAt.size() <= 64 &&
+        (!('sourceDocumentId' in data) || (data.sourceDocumentId is string && data.sourceDocumentId.size() <= 128));
+    }
+
+    // 6. Vital Reading Validation (VitalReading interface)
+    function isValidVitalReading(data) {
+      return data.keys().hasAll([
+          'id',
+          'userId',
+          'type',
+          'value',
+          'unit',
+          'measuredAt',
+          'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'userId',
+          'type',
+          'value',
+          'value2',
+          'unit',
+          'context',
+          'measuredAt',
+          'note',
+          'createdAt'
+        ]) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.userId is string && data.userId == request.auth.uid &&
+        data.type in ['blood_pressure', 'blood_glucose', 'weight', 'temperature', 'heart_rate', 'spo2'] &&
+        data.value is number && data.value >= 0 && data.value <= 1000 &&
+        data.unit is string && data.unit.size() <= 16 &&
+        data.measuredAt is string && data.measuredAt.size() <= 64 &&
+        data.createdAt is string && data.createdAt.size() <= 64 &&
+        (!('value2' in data) || (data.value2 is number && data.value2 >= 0 && data.value2 <= 1000)) &&
+        (!('context' in data) || data.context in ['fasting', 'after_meal', 'random', 'resting', 'after_activity']) &&
+        (!('note' in data) || (data.note is string && data.note.size() <= 500));
+    }
+
+    // 7. Medication Validation (Medication interface)
+    function isValidMedication(data) {
+      return data.keys().hasAll([
+          'id',
+          'userId',
+          'name',
+          'dose',
+          'times',
+          'startDate',
+          'active',
+          'takenLog',
+          'createdAt'
+        ]) &&
+        data.keys().hasOnly([
+          'id',
+          'userId',
+          'name',
+          'dose',
+          'times',
+          'startDate',
+          'endDate',
+          'notes',
+          'active',
+          'takenLog',
+          'createdAt'
+        ]) &&
+        data.id is string && data.id.size() <= 128 &&
+        data.userId is string && data.userId == request.auth.uid &&
+        data.name is string && data.name.size() <= 128 &&
+        data.dose is string && data.dose.size() <= 128 &&
+        data.times is list && data.times.size() <= 12 &&
+        data.startDate is string && data.startDate.size() <= 16 &&
+        data.active is bool &&
+        data.takenLog is list && data.takenLog.size() <= 800 &&
+        data.createdAt is string && data.createdAt.size() <= 64 &&
+        (!('endDate' in data) || (data.endDate is string && data.endDate.size() <= 16)) &&
+        (!('notes' in data) || (data.notes is string && data.notes.size() <= 500));
+    }
+
+    // ----------------------------------------------------
+    // Collection Match Rules
+    // ----------------------------------------------------
+
+    // Users Collection
+    match /users/{userId} {
+      allow get: if isOwner(userId) && isValidId(userId) && existing().userId == request.auth.uid;
+      allow list: if false;
+      allow create: if isOwner(userId) &&
+        isValidId(userId) &&
+        incoming().userId == userId &&
+        incoming().userId == request.auth.uid &&
+        isValidUserProfile(incoming());
+      allow update: if isOwner(userId) &&
+        isValidId(userId) &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == request.auth.uid &&
+        incoming().userId == userId &&
+        isValidUserProfile(incoming());
+      allow delete: if isOwner(userId) && isValidId(userId) && existing().userId == request.auth.uid;
+    }
+
+    // Health Notes Collection
+    match /notes/{noteId} {
+      allow get: if isSignedIn() && isValidId(noteId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+      allow create: if isSignedIn() &&
+        isValidId(noteId) &&
+        incoming().userId == request.auth.uid &&
+        incoming().id == noteId &&
+        isValidHealthNote(incoming());
+      allow update: if isSignedIn() &&
+        isValidId(noteId) &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == request.auth.uid &&
+        incoming().id == noteId &&
+        isValidHealthNote(incoming());
+      allow delete: if isSignedIn() && isValidId(noteId) && existing().userId == request.auth.uid;
+    }
+
+    // Source Documents Collection
+    match /documents/{documentId} {
+      allow get: if isSignedIn() && isValidId(documentId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+      allow create: if isSignedIn() &&
+        isValidId(documentId) &&
+        incoming().userId == request.auth.uid &&
+        incoming().id == documentId &&
+        isValidSourceDocument(incoming());
+      allow update: if isSignedIn() &&
+        isValidId(documentId) &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == request.auth.uid &&
+        incoming().id == documentId &&
+        isValidSourceDocument(incoming());
+      allow delete: if isSignedIn() && isValidId(documentId) && existing().userId == request.auth.uid;
+    }
+
+    // Appointments Collection
+    match /appointments/{appointmentId} {
+      allow get: if isSignedIn() && isValidId(appointmentId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+      allow create: if isSignedIn() &&
+        isValidId(appointmentId) &&
+        incoming().userId == request.auth.uid &&
+        incoming().id == appointmentId &&
+        isValidAppointment(incoming());
+      allow update: if isSignedIn() &&
+        isValidId(appointmentId) &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == request.auth.uid &&
+        incoming().id == appointmentId &&
+        isValidAppointment(incoming());
+      allow delete: if isSignedIn() && isValidId(appointmentId) && existing().userId == request.auth.uid;
+    }
+
+    // Study Resources Collection
+    match /study_resources/{resourceId} {
+      allow get: if isSignedIn() && isValidId(resourceId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+      allow create: if isSignedIn() &&
+        isValidId(resourceId) &&
+        incoming().userId == request.auth.uid &&
+        incoming().id == resourceId &&
+        isValidStudyResource(incoming());
+      allow update: if isSignedIn() &&
+        isValidId(resourceId) &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == request.auth.uid &&
+        incoming().id == resourceId &&
+        isValidStudyResource(incoming());
+      allow delete: if isSignedIn() && isValidId(resourceId) && existing().userId == request.auth.uid;
+    }
+
+    // Vitals Collection
+    match /vitals/{vitalId} {
+      allow get: if isSignedIn() && isValidId(vitalId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+      allow create: if isSignedIn() &&
+        isValidId(vitalId) &&
+        incoming().userId == request.auth.uid &&
+        incoming().id == vitalId &&
+        isValidVitalReading(incoming());
+      allow update: if isSignedIn() &&
+        isValidId(vitalId) &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == request.auth.uid &&
+        incoming().id == vitalId &&
+        isValidVitalReading(incoming());
+      allow delete: if isSignedIn() && isValidId(vitalId) && existing().userId == request.auth.uid;
+    }
+
+    // Medications Collection
+    match /medications/{medicationId} {
+      allow get: if isSignedIn() && isValidId(medicationId) && existing().userId == request.auth.uid;
+      allow list: if isSignedIn() && existing().userId == request.auth.uid;
+      allow create: if isSignedIn() &&
+        isValidId(medicationId) &&
+        incoming().userId == request.auth.uid &&
+        incoming().id == medicationId &&
+        isValidMedication(incoming());
+      allow update: if isSignedIn() &&
+        isValidId(medicationId) &&
+        existing().userId == request.auth.uid &&
+        incoming().userId == request.auth.uid &&
+        incoming().id == medicationId &&
+        isValidMedication(incoming());
+      allow delete: if isSignedIn() && isValidId(medicationId) && existing().userId == request.auth.uid;
+    }
+  }
+}

@@ -1,0 +1,523 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with language and clinical documentation preferences",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string",
+          "description": "User UID from Firebase Auth",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "description": "User email address",
+          "maxLength": 256
+        },
+        "displayName": {
+          "type": "string",
+          "description": "User display name",
+          "maxLength": 128
+        },
+        "preferredLanguage": {
+          "type": "string",
+          "description": "Preferred language: 'bn' or 'en'",
+          "enum": [
+            "bn",
+            "en"
+          ],
+          "maxLength": 8
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO timestamp of creation"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "ISO timestamp of last update"
+        }
+      },
+      "required": [
+        "userId",
+        "email"
+      ]
+    },
+    "HealthNote": {
+      "title": "HealthNote",
+      "description": "Patient health documentation note with structured symptoms and consultation preparation",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique note identifier",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner user UID",
+          "maxLength": 128
+        },
+        "title": {
+          "type": "string",
+          "description": "Title or chief complaint summary",
+          "maxLength": 256
+        },
+        "language": {
+          "type": "string",
+          "description": "Note language: bn, en, or mixed",
+          "maxLength": 32
+        },
+        "chiefComplaint": {
+          "type": "string",
+          "description": "Primary symptom or reason for visit",
+          "maxLength": 1000
+        },
+        "patientDescription": {
+          "type": "string",
+          "description": "Patient's description in their own words (Bangla/English)",
+          "maxLength": 10000
+        },
+        "onsetDate": {
+          "type": "string",
+          "description": "When symptoms started",
+          "maxLength": 100
+        },
+        "duration": {
+          "type": "string",
+          "description": "Duration of symptoms",
+          "maxLength": 100
+        },
+        "symptoms": {
+          "type": "string",
+          "description": "Specific symptoms reported",
+          "maxLength": 2000
+        },
+        "reportedMedicalHistory": {
+          "type": "string",
+          "description": "Past medical conditions reported by patient",
+          "maxLength": 2000
+        },
+        "existingMedications": {
+          "type": "string",
+          "description": "Current medications reported by patient",
+          "maxLength": 2000
+        },
+        "allergies": {
+          "type": "string",
+          "description": "Allergies reported by patient",
+          "maxLength": 1000
+        },
+        "questionsForDoctor": {
+          "type": "string",
+          "description": "Questions the user wants to ask healthcare professional",
+          "maxLength": 2000
+        },
+        "structuredSummary": {
+          "type": "string",
+          "description": "AI-assisted organized structured consultation brief",
+          "maxLength": 15000
+        },
+        "patientSummary": {
+          "type": "string",
+          "description": "Plain language patient summary",
+          "maxLength": 5000
+        },
+        "doctorBrief": {
+          "type": "string",
+          "description": "Concise clinical consultation brief",
+          "maxLength": 5000
+        },
+        "audioTranscript": {
+          "type": "string",
+          "description": "Raw or edited audio transcript",
+          "maxLength": 10000
+        },
+        "missingInformationFlags": {
+          "type": "string",
+          "description": "JSON string of flagged missing details",
+          "maxLength": 2000
+        },
+        "status": {
+          "type": "string",
+          "description": "Draft, ready, or completed",
+          "enum": [
+            "draft",
+            "ready",
+            "archived"
+          ],
+          "maxLength": 32
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        },
+        "updatedAt": {
+          "type": "string",
+          "description": "Last update timestamp"
+        }
+      },
+      "required": [
+        "userId",
+        "title"
+      ]
+    },
+    "SourceDocument": {
+      "title": "SourceDocument",
+      "description": "Uploaded medical document, report, or educational research paper",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique document identifier",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner user UID",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "File or source name",
+          "maxLength": 256
+        },
+        "category": {
+          "type": "string",
+          "description": "lab_report, prescription, discharge_summary, educational, literature",
+          "maxLength": 64
+        },
+        "fileType": {
+          "type": "string",
+          "description": "pdf, image, text, note",
+          "maxLength": 32
+        },
+        "extractedText": {
+          "type": "string",
+          "description": "Extracted text content for retrieval",
+          "maxLength": 50000
+        },
+        "analysisSummary": {
+          "type": "string",
+          "description": "AI plain-language explanation and findings",
+          "maxLength": 10000
+        },
+        "tags": {
+          "type": "string",
+          "description": "Comma separated tags",
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": [
+        "userId",
+        "name"
+      ]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "Upcoming or past doctor consultation and follow-up organizer",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique appointment identifier",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner user UID",
+          "maxLength": 128
+        },
+        "doctorName": {
+          "type": "string",
+          "description": "Name of physician or clinic",
+          "maxLength": 256
+        },
+        "specialty": {
+          "type": "string",
+          "description": "Specialty e.g. Cardiology, Medicine",
+          "maxLength": 128
+        },
+        "dateTime": {
+          "type": "string",
+          "description": "Date and time of appointment",
+          "maxLength": 64
+        },
+        "location": {
+          "type": "string",
+          "description": "Clinic location or hospital",
+          "maxLength": 256
+        },
+        "linkedNoteId": {
+          "type": "string",
+          "description": "ID of attached health note",
+          "maxLength": 128
+        },
+        "checklist": {
+          "type": "string",
+          "description": "Preparation checklist items JSON",
+          "maxLength": 2000
+        },
+        "status": {
+          "type": "string",
+          "description": "upcoming, completed, cancelled",
+          "enum": [
+            "upcoming",
+            "completed",
+            "cancelled"
+          ],
+          "maxLength": 32
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        },
+        "checklistDone": {
+          "type": "array",
+          "description": "Indexes of checklist items the user has ticked off",
+          "items": {
+            "type": "number"
+          },
+          "maxItems": 50
+        }
+      },
+      "required": [
+        "userId",
+        "doctorName",
+        "dateTime"
+      ]
+    },
+    "StudyResource": {
+      "title": "StudyResource",
+      "description": "Educational flashcard set, quiz, or mind map generated from educational sources",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique resource identifier",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner user UID",
+          "maxLength": 128
+        },
+        "title": {
+          "type": "string",
+          "description": "Title of study set",
+          "maxLength": 256
+        },
+        "type": {
+          "type": "string",
+          "description": "flashcards, quiz, mindmap, study_guide",
+          "maxLength": 64
+        },
+        "topic": {
+          "type": "string",
+          "description": "Health or medical subject topic",
+          "maxLength": 256
+        },
+        "contentJson": {
+          "type": "string",
+          "description": "Structured JSON payload of cards, questions, or mindmap nodes",
+          "maxLength": 50000
+        },
+        "sourceDocumentId": {
+          "type": "string",
+          "description": "Linked source document ID",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp"
+        }
+      },
+      "required": [
+        "userId",
+        "title",
+        "type"
+      ]
+    },
+    "VitalReading": {
+      "title": "VitalReading",
+      "description": "A self-reported home measurement (blood pressure, glucose, weight, temperature, heart rate, SpO2)",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner UID from Firebase Auth",
+          "maxLength": 128
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "blood_pressure",
+            "blood_glucose",
+            "weight",
+            "temperature",
+            "heart_rate",
+            "spo2"
+          ]
+        },
+        "value": {
+          "type": "number",
+          "description": "Primary value (systolic for blood pressure)",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "value2": {
+          "type": "number",
+          "description": "Diastolic value (blood pressure only)",
+          "minimum": 0,
+          "maximum": 1000
+        },
+        "unit": {
+          "type": "string",
+          "maxLength": 16
+        },
+        "context": {
+          "type": "string",
+          "enum": [
+            "fasting",
+            "after_meal",
+            "random",
+            "resting",
+            "after_activity"
+          ]
+        },
+        "measuredAt": {
+          "type": "string",
+          "description": "ISO timestamp of the measurement",
+          "maxLength": 64
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "createdAt": {
+          "type": "string",
+          "maxLength": 64
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "type",
+        "value",
+        "unit",
+        "measuredAt",
+        "createdAt"
+      ]
+    },
+    "Medication": {
+      "title": "Medication",
+      "description": "A medicine the user wants reminders and an adherence log for (not a prescription record)",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "userId": {
+          "type": "string",
+          "description": "Owner UID from Firebase Auth",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "dose": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "times": {
+          "type": "array",
+          "description": "Local reminder times, HH:MM",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 12
+        },
+        "startDate": {
+          "type": "string",
+          "description": "YYYY-MM-DD",
+          "maxLength": 16
+        },
+        "endDate": {
+          "type": "string",
+          "description": "YYYY-MM-DD",
+          "maxLength": 16
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "active": {
+          "type": "boolean"
+        },
+        "takenLog": {
+          "type": "array",
+          "description": "Doses marked taken, 'YYYY-MM-DD@HH:MM'",
+          "items": {
+            "type": "string"
+          },
+          "maxItems": 800
+        },
+        "createdAt": {
+          "type": "string",
+          "maxLength": 64
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "name",
+        "dose",
+        "times",
+        "startDate",
+        "active",
+        "takenLog",
+        "createdAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile with language and accessibility settings"
+    },
+    "/notes/{noteId}": {
+      "schema": "HealthNote",
+      "description": "User personal health consultation notes and drafts"
+    },
+    "/documents/{documentId}": {
+      "schema": "SourceDocument",
+      "description": "User uploaded health reports, prescriptions, and educational papers"
+    },
+    "/appointments/{appointmentId}": {
+      "schema": "Appointment",
+      "description": "User medical appointments and consultation prep checklists"
+    },
+    "/study_resources/{resourceId}": {
+      "schema": "StudyResource",
+      "description": "Educational study guides, flashcards, quizzes, and mind maps"
+    },
+    "/vitals/{vitalId}": {
+      "schema": "VitalReading",
+      "description": "User home measurements for the Vitals Tracker"
+    },
+    "/medications/{medicationId}": {
+      "schema": "Medication",
+      "description": "User medicine reminders and taken-dose log"
+    }
+  }
+}

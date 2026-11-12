@@ -1,0 +1,12 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+
+# Local AI Studio exports and temporary design captures are not runtime assets.
+.aistudio/
+public/assets/aistudio/

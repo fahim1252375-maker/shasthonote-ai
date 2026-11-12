@@ -1,0 +1,23 @@
+{
+  "name": "ShasthoNote AI",
+  "description": "Bangla-English health record organizer with appointment preparation, personal tracking and AI-assisted document and learning tools.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API",
+    "DETERMINISTIC_HEALTH_INSIGHTS"
+  ],
+  "version": "0.5.0",
+  "features": [
+    "Consultation notes and clinician visit preparation",
+    "Medical document text extraction and summaries",
+    "Vitals and medication schedule tracking",
+    "Health Insights based on deterministic reference checks",
+    "Appointments, timelines and lab trends",
+    "Source-based record questions and study tools",
+    "Guest demo mode and Firebase account storage",
+    "Bangla and English interface"
+  ]
+}

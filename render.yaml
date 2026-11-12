@@ -2,11 +2,12 @@ services:
   - type: web
     name: shasthonote-ai
     runtime: node
-    plan: starter
+    plan: free
+    region: singapore
     buildCommand: npm ci --no-audit --no-fund && npm run build
     startCommand: npm start
     healthCheckPath: /api/health
-    autoDeploy: false
+    autoDeployTrigger: commit
     envVars:
       - key: NODE_ENV
         value: production

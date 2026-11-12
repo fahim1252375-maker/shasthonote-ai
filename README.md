@@ -1,5 +1,7 @@
 # ShasthoNote AI v0.5.0
 
+[![CI](https://github.com/fahim1252375-maker/shasthonote-ai/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/fahim1252375-maker/shasthonote-ai/actions/workflows/ci.yml)
+
 ShasthoNote AI is a Bangla-English workspace for organizing health information before a conversation with a healthcare professional. It brings consultation notes, medical documents, appointments, self-recorded measurements and learning tools into one place. AI features help summarize or explain selected material; the app is not a diagnostic or treatment system.
 
 ## What is in the app
@@ -26,6 +28,16 @@ The bundled sample data is synthetic. Use it for demonstrations; do not treat it
 | Offline support | Firestore IndexedDB persistence and a service worker for static app assets |
 | Tests | Node.js `node:test` tests run through `tsx` |
 
+## Continuous integration
+
+GitHub Actions runs the CI workflow on pushes to `main`, pull requests targeting `main`, and manual dispatches. It uses the Node.js version specified in `.node-version`, installs the committed npm lockfile with `npm ci`, and runs these checks in order:
+
+1. `npm run typecheck`
+2. `npm test`
+3. `npm run build`
+
+The workflow has read-only repository permissions and cancels superseded runs for the same branch or pull request. These checks validate the TypeScript project, utility test suite and frontend production build. They do not run live Firebase/Gemini integration tests, browser end-to-end tests, or deploy the application.
+
 ## Run locally
 
 ### Requirements
@@ -37,10 +49,14 @@ The bundled sample data is synthetic. Use it for demonstrations; do not treat it
 
 ### Install and configure
 
+For a clean install that matches the committed lockfile:
+
 ```bash
-npm install
+npm ci
 cp .env.example .env
 ```
+
+When intentionally changing dependencies, use `npm install` and commit the updated `package-lock.json`.
 
 The application already includes a Firebase client configuration in `firebase-applet-config.json`. Check that it points to a Firebase project you are authorized to use. The project ID can be overridden for server-side token verification with `FIREBASE_PROJECT_ID`.
 
@@ -78,7 +94,7 @@ Open [http://localhost:3000](http://localhost:3000). `npm run dev` starts the Ex
 | `npm run preview` | Preview the Vite bundle without the Express API server |
 | `npm run clean` | Remove the generated Vite `dist/` directory |
 
-There is no separate ESLint or Prettier configuration in this repository. `typecheck` is a TypeScript check, not a style linter. The test suite currently covers utility modules; it does not replace browser, Firebase Emulator or live Gemini integration tests. The repository has no committed npm `package-lock.json` even though the deployment configuration uses npm; create one and use `npm ci` before relying on reproducible builds.
+There is no separate ESLint or Prettier configuration in this repository. `typecheck` is a TypeScript check, not a style linter. The test suite currently covers utility modules; it does not replace browser, Firebase Emulator or live Gemini integration tests. The committed `package-lock.json` is used by CI and is the reproducible npm dependency baseline.
 
 ## Environment variables
 

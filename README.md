@@ -2,8 +2,6 @@
 
 [![CI](https://github.com/fahim1252375-maker/shasthonote-ai/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/fahim1252375-maker/shasthonote-ai/actions/workflows/ci.yml)
 
-[![CI](https://github.com/fahim1252375-maker/shasthonote-ai/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/fahim1252375-maker/shasthonote-ai/actions/workflows/ci.yml)
-
 ShasthoNote AI is a Bangla-English workspace for organizing health information before a conversation with a healthcare professional. It brings consultation notes, medical documents, appointments, self-recorded measurements and learning tools into one place. AI features help summarize or explain selected material; the app is not a diagnostic or treatment system.
 
 ## What is in the app

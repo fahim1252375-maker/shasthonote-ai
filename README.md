@@ -1,66 +1,93 @@
-# ShasthoNote AI v0.5.0
+<!-- Project README: ShasthoNote AI -->
 
-[![CI](https://github.com/fahim1252375-maker/shasthonote-ai/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/fahim1252375-maker/shasthonote-ai/actions/workflows/ci.yml)
+<p align="center">
+  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:14243A,50:0F766E,100:2563EB&height=190&section=header&text=ShasthoNote%20AI&fontSize=42&fontColor=ffffff&fontAlignY=38&desc=Organise%20health%20information.%20Prepare%20for%20better%20conversations.&descAlignY=62&descSize=13" alt="ShasthoNote AI — Health information workspace" />
+</p>
 
-ShasthoNote AI is a Bangla-English workspace for organizing health information before a conversation with a healthcare professional. It brings consultation notes, medical documents, appointments, self-recorded measurements and learning tools into one place. AI features help summarize or explain selected material; the app is not a diagnostic or treatment system.
+<p align="center">
+  <strong>A Bangla-English workspace for organising personal health information before a conversation with a healthcare professional.</strong>
+</p>
 
-## What is in the app
+<p align="center">
+  <a href="https://github.com/fahim1252375-maker/shasthonote-ai/actions/workflows/ci.yml"><img src="https://github.com/fahim1252375-maker/shasthonote-ai/actions/workflows/ci.yml/badge.svg?branch=main" alt="Continuous integration" /></a>
+  <img src="https://img.shields.io/badge/Version-0.5.0-2563EB?style=flat-square" alt="Version 0.5.0" />
+  <img src="https://img.shields.io/badge/Language-English%20%2B%20Bangla-0F766E?style=flat-square" alt="English and Bangla" />
+  <img src="https://img.shields.io/badge/Status-Prototype-D97706?style=flat-square" alt="Prototype" />
+</p>
 
-- **Consultation notes:** record a concern, symptom history, allergies, existing medicines and questions for a clinician. The AI summary endpoint can turn the selected note into a patient summary and a clinician-facing brief.
-- **Documents:** submit PDF, image or text content for extraction and explanation. Extracted values should always be checked against the original file.
-- **Appointments and preparation:** manage visits, link notes, and prepare a printable visit pack from saved information.
-- **Personal tracking:** log blood pressure, glucose, weight, temperature, heart rate and SpO₂; view trends and export CSV. The medication area stores user-entered schedules and dose check-ins. It does not prescribe doses.
-- **Health Insights:** review deterministic observations from saved vitals, medication schedules, appointments and older documents. Invalid or future-dated readings are excluded from current vital observations and called out for review.
-- **Research and learning:** ask questions against selected record passages, create flashcards/quizzes/study guides/mind maps, and generate a narration script. Browser SpeechSynthesis reads the script; the server does not create an audio file.
-- **Privacy tools:** use guest demo data, sign in with Google to store records in Firestore, and export either a JSON backup or a password-protected `.shasthonote` backup.
+<p align="center">
+  <a href="./START_HERE_BN.md">বাংলা Setup Guide</a> ·
+  <a href="./ARCHITECTURE.md">Architecture</a> ·
+  <a href="./API_DOCUMENTATION.md">API Documentation</a> ·
+  <a href="./PRIVACY.md">Privacy</a> ·
+  <a href="./SECURITY.md">Security</a>
+</p>
 
-The bundled sample data is synthetic. Use it for demonstrations; do not treat it as a real patient's record.
+---
+
+## Overview
+
+ShasthoNote AI helps users organise information they may want to discuss with a healthcare professional. The workspace brings consultation notes, documents, appointments, self-recorded measurements, medication schedules, and learning materials into one place.
+
+Optional AI features can summarise selected notes or explain selected document content. The application is a **personal-information and preparation prototype**, not a medical device, diagnostic system, treatment planner, or replacement for a clinician.
+
+The bundled sample records are synthetic and intended only for demonstration.
+
+## Main Workflows
+
+| Workspace | What it supports |
+|---|---|
+| Consultation notes | Record concerns, symptom history, allergies, existing medicines, and questions for a clinician; prepare patient and clinician-facing summaries |
+| Documents | Extract and explain selected PDF, image, or text content; verify all extracted values against the original |
+| Appointments | Organise visits, link related notes, and prepare a printable visit pack |
+| Personal tracking | Log blood pressure, glucose, weight, temperature, heart rate, and SpO₂; view trends and export CSV |
+| Medication schedule | Store user-entered schedules and dose check-ins; the app does not prescribe or change doses |
+| Health Insights | Review deterministic observations derived from saved records and valid measurements |
+| Research and learning | Ask questions about selected record passages and create study materials such as flashcards, quizzes, and study guides |
+| Privacy and portability | Use synthetic guest data, Google sign-in with Firestore-backed records, and JSON or password-protected `.shasthonote` backups |
 
 ## Technology
 
-| Area | Implementation |
-| --- | --- |
-| Web client | React 19, TypeScript, Vite 8, Tailwind CSS 4 |
-| UI icons | lucide-react |
-| Backend | Express 4, TypeScript executed by tsx |
-| Authentication and records | Firebase Authentication and Cloud Firestore |
+| Layer | Implementation |
+|---|---|
+| Frontend | React 19, TypeScript, Vite 8, Tailwind CSS 4 |
+| Backend | Express 4, TypeScript, `tsx` |
+| Authentication | Firebase Authentication with Google sign-in |
+| Data storage | Cloud Firestore; browser IndexedDB persistence |
 | AI | Google Gemini through the server-side `@google/genai` client |
-| Offline support | Firestore IndexedDB persistence and a service worker for static app assets |
-| Tests | Node.js `node:test` tests run through `tsx` |
+| UI icons | lucide-react |
+| Tests | Node.js built-in test runner through `tsx` |
+| Build | Vite production frontend bundle |
 
-## Continuous integration
+## Continuous Integration
 
-GitHub Actions runs the CI workflow on pushes to `main`, pull requests targeting `main`, and manual dispatches. It uses the Node.js version specified in `.node-version`, installs the committed npm lockfile with `npm ci`, and runs these checks in order:
+The GitHub Actions workflow runs on pushes to `main`, pull requests targeting `main`, and manual dispatch. It installs dependencies from the committed lockfile and runs:
 
 1. `npm run typecheck`
 2. `npm test`
 3. `npm run build`
 
-The workflow has read-only repository permissions and cancels superseded runs for the same branch or pull request. These checks validate the TypeScript project, utility test suite and frontend production build. They do not run live Firebase/Gemini integration tests, browser end-to-end tests, or deploy the application.
+These checks cover TypeScript validation, the current utility test suite, and the frontend production build. They do not constitute live Firebase/Gemini integration tests, browser end-to-end tests, or deployment verification.
 
-## Run locally
+## Run Locally
 
 ### Requirements
 
-- Node.js 22.12 or later. The repository's `.node-version` currently specifies 22.16.0.
-- npm (included with Node.js).
-- A Firebase project configured for Google sign-in and Firestore.
-- A Gemini API key only if you intend to use the AI endpoints.
+- Node.js **22.12 or later** (the repository's `.node-version` currently specifies `22.16.0`)
+- npm
+- A Firebase project configured for Google Authentication and Cloud Firestore
+- A Gemini API key only for AI-powered endpoints
 
-### Install and configure
-
-For a clean install that matches the committed lockfile:
+### Install
 
 ```bash
+git clone https://github.com/fahim1252375-maker/shasthonote-ai.git
+cd shasthonote-ai
 npm ci
 cp .env.example .env
 ```
 
-When intentionally changing dependencies, use `npm install` and commit the updated `package-lock.json`.
-
-The application already includes a Firebase client configuration in `firebase-applet-config.json`. Check that it points to a Firebase project you are authorized to use. The project ID can be overridden for server-side token verification with `FIREBASE_PROJECT_ID`.
-
-Set the server-side Gemini key in `.env` when using AI features:
+Configure the server-side values in `.env` as required:
 
 ```env
 GEMINI_API_KEY="your-gemini-api-key"
@@ -70,69 +97,85 @@ PORT=3000
 CSP_ENFORCE=false
 ```
 
-`GEMINI_API_KEY` must remain on the server. Do not put it in a `VITE_` variable, browser code, or the Firebase client configuration. The app shell can start without the key, but AI requests will return an unavailable response. `GEMINI_MODEL` defaults to `gemini-2.5-flash`; confirm that the selected model is available to your Google AI project.
+- Keep `GEMINI_API_KEY` on the server. Never put it in a `VITE_` variable, frontend source, or a public repository.
+- The Firebase project ID must match the project configured in `firebase-applet-config.json`.
+- In Firebase Console, enable Google as an Authentication provider, add local and deployed domains to Authorized domains, and configure Firestore.
+- Review `firestore.rules` and test them with the Firebase Emulator before deploying rules. Having a rules file in this repository does not mean those rules have been deployed to your Firebase project.
 
-In Firebase Console, enable Google as an Authentication provider, add the local and deployed domains to Authorized domains, and configure Firestore. Review `firestore.rules` and test it with the Firebase Emulator before deploying the rules. The presence of the rules file in this repository does not mean that it has been deployed to your Firebase project.
-
-### Start the application
+### Start
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). `npm run dev` starts the Express server, which serves the Vite development client and `/api/*` routes. Guest mode uses local browser storage and cannot call AI endpoints. Sign in with Google to use Firestore-backed records and AI features; the account-specific AI data-use notice must be accepted before a request is sent.
+Open [http://localhost:3000](http://localhost:3000). The Express server serves the Vite development client and the `/api/*` routes.
 
-## Project commands
+- **Guest mode** uses synthetic browser-local demo data and cannot call protected AI endpoints.
+- **Google sign-in** enables Firestore-backed records.
+- **AI features** require the account-specific data-use notice to be accepted before selected content is sent to the server and configured Gemini API.
+
+## Project Commands
 
 | Command | Purpose |
-| --- | --- |
+|---|---|
 | `npm run dev` | Start the Express/Vite development server |
-| `npm start` | Start the server (production mode serves `dist/`) |
-| `npm run typecheck` | Run the TypeScript compiler without emitting files |
-| `npm test` | Run utility tests with Node's test runner through `tsx` |
-| `npm run build` | Create the Vite production frontend bundle in `dist/` |
-| `npm run preview` | Preview the Vite bundle without the Express API server |
-| `npm run clean` | Remove the generated Vite `dist/` directory |
+| `npm start` | Start the server; production mode serves `dist/` |
+| `npm run typecheck` | Run TypeScript without emitting files |
+| `npm test` | Run utility tests through Node's test runner and `tsx` |
+| `npm run build` | Build the Vite frontend into `dist/` |
+| `npm run preview` | Preview the frontend build without the Express API server |
+| `npm run clean` | Remove the generated `dist/` directory |
 
-There is no separate ESLint or Prettier configuration in this repository. `typecheck` is a TypeScript check, not a style linter. The test suite currently covers utility modules; it does not replace browser, Firebase Emulator or live Gemini integration tests. The committed `package-lock.json` is used by CI and is the reproducible npm dependency baseline.
+There is no separate ESLint or Prettier configuration in this repository. `typecheck` is a TypeScript check, not a style linter. The current unit tests cover utility modules; they do not replace browser, Firebase Emulator, or live Gemini integration tests.
 
-## Environment variables
+## Environment Variables
 
 | Variable | Required | Default | Purpose |
-| --- | --- | --- | --- |
-| `GEMINI_API_KEY` | For AI features | unset | Server-side Google Gemini API key |
-| `GEMINI_MODEL` | No | `gemini-2.5-flash` | Model name passed to the Gemini client |
-| `FIREBASE_PROJECT_ID` | No, if client config has a project ID | `firebase-applet-config.json` project ID | Expected Firebase token audience and issuer |
+|---|---|---|---|
+| `GEMINI_API_KEY` | For AI features | Unset | Server-side Gemini API key |
+| `GEMINI_MODEL` | No | `gemini-2.5-flash` | Model identifier passed to the Gemini client |
+| `FIREBASE_PROJECT_ID` | Usually no | Project ID from `firebase-applet-config.json` | Expected Firebase token audience and issuer |
 | `PORT` | No | `3000` | Express listening port |
-| `CSP_ENFORCE` | No | `false` | Send enforcing CSP when set to `true`; otherwise production uses report-only CSP |
-| `NODE_ENV` | No | determined by runtime | Controls production headers and static serving |
+| `CSP_ENFORCE` | No | `false` | Enables enforcing Content Security Policy when set to `true` |
+| `NODE_ENV` | No | Runtime-dependent | Controls production headers and static asset serving |
 
-## Code layout
+## Repository Guide
 
 ```text
 src/
   components/   React views for each workspace
   data/         Synthetic guest/demo records
-  lib/          Firebase, record access, consent and browser download helpers
+  lib/          Firebase, record access, consent and browser-download helpers
   types/        Shared application data types
-  utils/        Pure calculations, validation, export and backup logic + unit tests
+  utils/        Calculations, validation, export and backup helpers + tests
 server.ts       Express API, Firebase token verification and Gemini routes
 firestore.rules Firestore ownership and field validation rules
 public/         PWA manifest, icons and static service worker
 ```
 
-See [ARCHITECTURE.md](./ARCHITECTURE.md) for the data flow, [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) for server routes, [SECURITY.md](./SECURITY.md) and [PRIVACY.md](./PRIVACY.md) for data-handling limits, and [FEATURE_ROADMAP.md](./FEATURE_ROADMAP.md) for what still needs verification.
+Further documentation:
 
-## Important limitations
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — application structure and data flow
+- [API_DOCUMENTATION.md](./API_DOCUMENTATION.md) — server routes
+- [PRIVACY.md](./PRIVACY.md) — data handling and privacy boundaries
+- [SECURITY.md](./SECURITY.md) — security notes and reporting
+- [FEATURE_ROADMAP.md](./FEATURE_ROADMAP.md) — feature status and future verification
+- [docs/AI_DISCLOSURE.md](./docs/AI_DISCLOSURE.md) — AI-use disclosure checklist
 
-- This is a prototype. It has not been clinically validated and must not be used to diagnose, prescribe, decide medication changes or manage emergencies.
-- Vital reference checks are general-purpose rules. They may not match an individual's medical history or clinician-set targets.
-- AI summaries, extracted document values, research responses and nearby-care results can be incomplete or wrong. Check original documents and verify details directly.
+## Privacy, Safety, and Limitations
+
+- This prototype has not been clinically validated. Do not use it to diagnose, prescribe, decide medication changes, or manage an emergency.
+- Vital reference checks are general-purpose rules and may not fit an individual's medical history or clinician-set targets.
+- AI summaries, extracted document values, research responses, and nearby-care results can be incomplete or incorrect. Check original documents and verify important details directly.
 - AI requests send the selected content to the configured server and Gemini API. Do not upload identifiable health information until privacy requirements and vendor terms have been reviewed.
 - Firestore IndexedDB persistence is not an encrypted vault. Signing out does not clear the browser's persistent cache. Avoid shared browser profiles and clear site data before handing over a device.
 - The service worker caches static frontend assets only. AI features require a network connection.
-- The custom Firebase ID-token verifier does not check token revocation or disabled-user status. Rate limiting is in-memory per server process. Firestore rules, production hosting, CSP enforcement and live Firebase/Gemini flows require environment-specific testing.
+- The current CI workflow does not test live Firebase/Gemini flows, browser automation, or production deployment. Firestore rules, CSP enforcement, and hosting configuration need environment-specific verification.
 
-## Development and AI disclosure
+## Development and AI Disclosure
 
-Document which tools assisted implementation, what you personally designed or changed, which tests you actually ran, and what remains unverified. Do not claim unaided authorship or clinical validation unless those claims are true. See [docs/AI_DISCLOSURE.md](./docs/AI_DISCLOSURE.md) for a disclosure checklist.
+AI tools may be used as supporting aids for brainstorming, understanding unfamiliar concepts, debugging, implementation support, and documentation. Contributors are responsible for understanding, reviewing, and testing all published changes. Do not claim unaided authorship, clinical validation, or completed testing unless those claims are accurate. See [docs/AI_DISCLOSURE.md](./docs/AI_DISCLOSURE.md).
+
+## License
+
+See the repository's [LICENSE](./LICENSE) file.

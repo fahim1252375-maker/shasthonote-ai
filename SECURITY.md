@@ -36,7 +36,7 @@ The app uses the existing project `gen-lang-client-0324783220` and Firestore dat
 
 The rules contain a default-deny catch-all. The data collections require `userId` ownership on create and both old/new ownership on update. Stored `id` values must match the corresponding Firestore document ID. Field allowlists use `hasOnly()` and mandatory fields use `hasAll()`.
 
-`documents.findings` is capped at ten maps. Since Firestore Security Rules do not provide a general loop over arbitrary list elements, the rules explicitly validate indices 0–9 with short-circuit size guards. Every permitted finding is checked for required/allowed keys, string types and field-length limits. The Emulator regression suite tests valid lists, malformed later elements and the size boundary.
+`documents.findings` is capped at five maps to stay within the Firestore Rules expression budget. Since Firestore Security Rules do not provide a general loop over arbitrary list elements, the rules explicitly validate indices 0–4 with short-circuit size guards. Every permitted finding is checked for allowed keys, required string fields and field-length limits. The UI truncates extracted findings to the same five-item maximum. The Emulator regression suite tests five valid items, a malformed fifth item and the size boundary.
 
 `testConnection()` issues an authenticated owner-filtered query and distinguishes permission denial from network unavailability.
 

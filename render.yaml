@@ -15,6 +15,8 @@ services:
         value: gen-lang-client-0324783220
       - key: GEMINI_API_KEY
         sync: false
+      - key: AI_CONSENT_COOKIE_SECRET
+        sync: false
       - key: GEMINI_MODEL
         value: gemini-2.5-flash
       - key: CSP_ENFORCE

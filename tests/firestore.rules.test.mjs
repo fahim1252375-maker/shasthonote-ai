@@ -46,6 +46,12 @@ test('owner can create a document with valid findings', async () => {
   await assertSucceeds(setDoc(doc(db, 'documents', 'document-1'), validDocument('owner-1')));
 });
 
+test('owner can create a document with ten valid findings', async () => {
+  const db = testEnv.authenticatedContext('owner-1').firestore();
+  const findings = Array.from({ length: 10 }, (_, index) => validFinding(index));
+  await assertSucceeds(setDoc(doc(db, 'documents', 'document-1'), validDocument('owner-1', findings)));
+});
+
 test('rules validate every finding, including the tenth element', async () => {
   const db = testEnv.authenticatedContext('owner-1').firestore();
   const findings = Array.from({ length: 10 }, (_, index) => validFinding(index));

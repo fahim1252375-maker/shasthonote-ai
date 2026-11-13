@@ -133,3 +133,25 @@ See `MERGE_REPORT.md` for the comparison of the two source packages and the full
 - TypeScript/TSX syntax transpilation: **64 files, 0 syntax diagnostics**. This is not a semantic project-wide type-check.
 - A strict TypeScript check passed for the utility dependency chain covering Health Insights, medication scheduling, vital validation/trends and health calculators. This is narrower than the full project typecheck.
 - `npm install --no-audit --no-fund` timed out after 120 seconds; no `node_modules` directory was available afterward. Direct `npm run typecheck`, `npm test` and `npm run build` attempts were blocked by missing installed type declarations, `tsx` and Vite. Browser integration, Firebase Emulator, live Firebase/Gemini and deployment were not run.
+
+
+## 2026-11-13 security hardening update
+
+### Implemented in the security-hardening branch
+
+- Firestore client cache changed from persistent IndexedDB to explicit memory-only cache for signed-in health records. This reduces local persistence but removes reliable signed-in offline record availability after a reload.
+- Added an authenticated `/api/consent` GET/POST API. The server issues a versioned, UID-bound, HttpOnly, SameSite=Strict consent cookie signed with `AI_CONSENT_COOKIE_SECRET`; AI routes reject requests without a valid cookie. localStorage is now only a UI mirror.
+- Changed Firestore `documents.findings` validation to a hard maximum of ten elements and explicit validation of every allowed index (0–9). This matches the UI's documented maximum and rejects malformed later items.
+- Added Firestore Emulator regression tests for owner access, valid finding lists, malformed later findings and list length boundaries; CI provisions Emulator tooling and runs the rules suite.
+
+### Remaining production blockers
+
+- Firebase ID token verification is **not yet migrated** to Firebase Admin SDK. The current custom verifier still does not check revoked tokens or disabled users. This requires adding and locking the `firebase-admin` dependency, configuring a least-privilege service identity on the hosting platform, and validating `verifyIdToken(token, true)` in the deployed runtime.
+- Emulator tests run against the repository rules in CI; the rules still need deliberate review and deployment to the actual Firebase project.
+- GitHub branch protection has not been changed from this connector. Configure `main` to require a pull request and the CI status check, require branches to be up to date, and prohibit force-pushes/deletions.
+- `AI_CONSENT_COOKIE_SECRET` must be configured as a unique secret of at least 32 characters in every deployed server environment. Generate it with `openssl rand -base64 32`. Without it, AI consent acceptance and AI endpoints fail closed.
+- The signed consent cookie is server-verifiable enforcement, not a central legal consent ledger. Production privacy, retention, deletion, incident-response and vendor obligations still need an operator review.
+
+### Verification status
+
+This branch adds automated tests and CI steps, but no GitHub Actions run, Firebase deployment, production hosting configuration, live Firebase Admin verification or independent security assessment has been observed yet. Do not treat the branch as production approved until those gates are completed.

@@ -46,6 +46,7 @@ import { ConsentModal } from './components/ConsentModal';
 import { TodayPanel } from './components/TodayPanel';
 import { HealthInsightsView } from './components/HealthInsightsView';
 import { getAiConsentState, setAiConsent, type AiConsentState } from './lib/consent';
+import { getServerAiConsent, setServerAiConsent } from './lib/firebase';
 import { deleteAllOwnedRecords, deleteOwnedRecord, loadOwnedRecords, saveOwnedRecord, type OwnedCollection } from './lib/records';
 import { downloadTextFile } from './lib/download';
 import { decryptBackupText, encryptBackupText, isEncryptedBackupText } from './utils/secureBackup';
@@ -225,10 +226,27 @@ export default function App() {
       setSelectedNote(null);
       setSelectedDocument(null);
 
-      // Ask once per account before any AI request can send text or files to the server.
+      // Local storage is only a UI mirror. The server-signed consent cookie is authoritative.
       const storedConsent = getAiConsentState(firebaseUser.uid);
-      setConsentState(storedConsent);
-      setIsConsentModalOpen(storedConsent === 'unset');
+      setConsentState(storedConsent === 'declined' ? 'declined' : 'unset');
+      setIsConsentModalOpen(storedConsent !== 'declined');
+      void getServerAiConsent().then((serverGranted) => {
+        if (auth.currentUser?.uid !== firebaseUser.uid) return;
+        setAiConsent(firebaseUser.uid, serverGranted);
+        const nextState: AiConsentState = serverGranted
+          ? 'granted'
+          : storedConsent === 'declined' ? 'declined' : 'unset';
+        setConsentState(nextState);
+        setIsConsentModalOpen(nextState === 'unset');
+      }).catch((error) => {
+        // Fail closed: a localStorage "granted" value cannot authorise server AI requests.
+        console.warn('Could not verify server-side AI consent; AI features remain disabled:', error);
+        if (auth.currentUser?.uid !== firebaseUser.uid) return;
+        setAiConsent(firebaseUser.uid, false);
+        const nextState: AiConsentState = storedConsent === 'declined' ? 'declined' : 'unset';
+        setConsentState(nextState);
+        setIsConsentModalOpen(nextState === 'unset');
+      });
 
       try {
         const connectionStatus = await testConnection();
@@ -502,12 +520,22 @@ export default function App() {
   // --- Privacy & data center -------------------------------------------------------------------
   const backupData: BackupData = { notes, documents, appointments, studyResources, vitals, medications };
 
-  const handleSetConsent = (granted: boolean) => {
+  const handleSetConsent = async (granted: boolean) => {
     const currentUser = auth.currentUser;
     if (!currentUser) return;
-    setAiConsent(currentUser.uid, granted);
-    setConsentState(granted ? 'granted' : 'declined');
-    setIsConsentModalOpen(false);
+    try {
+      // The server must issue/revoke its HttpOnly consent cookie before the UI changes.
+      await setServerAiConsent(granted);
+      setAiConsent(currentUser.uid, granted);
+      setConsentState(granted ? 'granted' : 'declined');
+      setIsConsentModalOpen(false);
+    } catch (error) {
+      console.error('Could not update server-side AI consent:', error);
+      const detail = error instanceof Error ? error.message : 'Unknown server error';
+      window.alert(language === 'bn'
+        ? `সার্ভারে AI সম্মতির অবস্থা সংরক্ষণ করা যায়নি। AI বন্ধ থাকবে। ${detail}`
+        : `Could not save AI consent on the server. AI remains disabled. ${detail}`);
+    }
   };
 
   const handleExportBackup = () => {

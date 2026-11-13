@@ -20,7 +20,7 @@
     "dotenv": "^18.0.10",
     "express": "^4.21.2",
     "firebase": "^13.2.0",
-    "lucide-react": "^0.546.0",
+    "lucide-react": "^1.71.0",
     "react": "^19.0.1",
     "react-dom": "^19.0.1",
     "tsx": "^4.21.0",

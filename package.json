@@ -9,8 +9,9 @@
     "start": "tsx server.ts",
     "preview": "vite preview",
     "clean": "rm -rf dist",
-    "test": "tsx --test \"src/utils/*.test.ts\"",
-    "typecheck": "tsc --noEmit"
+    "test": "tsx --test \"src/utils/*.test.ts\" \"server/*.test.ts\"",
+    "typecheck": "tsc --noEmit",
+    "test:rules": "node --test tests/firestore.rules.test.mjs"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

@@ -186,4 +186,4 @@ AI tools may be used as supporting aids for brainstorming, understanding unfamil
 
 ## License
 
-See the repository's [LICENSE](./LICENSE) file.
+No open-source license has been selected for this repository yet, and there is currently no `LICENSE` file. Until the owner adds a license, do not assume that the code may be reused, modified, or redistributed. Choose and add an explicit license before inviting external reuse or contributions.

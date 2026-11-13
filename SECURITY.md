@@ -68,7 +68,7 @@ The rules contain a default-deny catch-all. The data collections require `userId
 
 1. Replace the custom token verifier with Firebase Admin SDK verification and enable revocation/disabled-account checks.
 2. Run and review the Firestore Emulator test suite in CI; deploy the tested rules to the intended Firebase project only after review.
-3. Enable GitHub branch protection for `main`: require pull requests, require the CI status check, require branches to be up to date, and block force pushes/deletions.
+3. Finish the active `main` ruleset configuration. The ruleset already requires pull requests, blocks deletion and force-pushes, and requires linear history. However, its required-status-check list is empty and the up-to-date requirement is disabled. Add both `Typecheck, test and build` and `Analyze JavaScript and TypeScript` as required checks, then enable the requirement that branches be up to date.
 4. Configure HTTPS and secure hosting; verify the report-only CSP, then enforce it (`CSP_ENFORCE=true`); confirm HSTS is sent by your host/proxy.
 5. Use a distributed rate limiter and set API usage budgets/alerts.
 6. Define patient-data consent, retention, export, deletion, backup, incident response, and vendor data-processing procedures.

@@ -53,7 +53,7 @@ The bundled sample records are synthetic and intended only for demonstration.
 | Frontend | React 19, TypeScript, Vite 8, Tailwind CSS 4 |
 | Backend | Express 4, TypeScript, `tsx` |
 | Authentication | Firebase Authentication with Google sign-in |
-| Data storage | Cloud Firestore; browser IndexedDB persistence |
+| Data storage | Cloud Firestore; memory-only browser cache for signed-in health records |
 | AI | Google Gemini through the server-side `@google/genai` client |
 | UI icons | lucide-react |
 | Tests | Node.js built-in test runner through `tsx` |
@@ -65,7 +65,8 @@ The GitHub Actions workflow runs on pushes to `main`, pull requests targeting `m
 
 1. `npm run typecheck`
 2. `npm test`
-3. `npm run build`
+3. Firestore Rules tests in the Firebase Emulator Suite (`npm run test:rules`)
+4. `npm run build`
 
 These checks cover TypeScript validation, the current utility test suite, and the frontend production build. They do not constitute live Firebase/Gemini integration tests, browser end-to-end tests, or deployment verification.
 
@@ -100,7 +101,8 @@ CSP_ENFORCE=false
 - Keep `GEMINI_API_KEY` on the server. Never put it in a `VITE_` variable, frontend source, or a public repository.
 - The Firebase project ID must match the project configured in `firebase-applet-config.json`.
 - In Firebase Console, enable Google as an Authentication provider, add local and deployed domains to Authorized domains, and configure Firestore.
-- Review `firestore.rules` and test them with the Firebase Emulator before deploying rules. Having a rules file in this repository does not mean those rules have been deployed to your Firebase project.
+- Generate `AI_CONSENT_COOKIE_SECRET` with `openssl rand -base64 32` and configure it in the server environment. AI endpoints fail closed unless the server can verify a signed consent cookie.
+- Review `firestore.rules` and run `npm run test:rules` before deploying rules. Having a rules file in this repository does not mean those rules have been deployed to your Firebase project.
 
 ### Start
 
@@ -112,7 +114,7 @@ Open [http://localhost:3000](http://localhost:3000). The Express server serves t
 
 - **Guest mode** uses synthetic browser-local demo data and cannot call protected AI endpoints.
 - **Google sign-in** enables Firestore-backed records.
-- **AI features** require the account-specific data-use notice to be accepted before selected content is sent to the server and configured Gemini API.
+- **AI features** require a server-issued, UID-bound consent cookie after the account-specific data-use notice is accepted. The browser's localStorage flag is only a UI mirror.
 
 ## Project Commands
 
@@ -121,7 +123,8 @@ Open [http://localhost:3000](http://localhost:3000). The Express server serves t
 | `npm run dev` | Start the Express/Vite development server |
 | `npm start` | Start the server; production mode serves `dist/` |
 | `npm run typecheck` | Run TypeScript without emitting files |
-| `npm test` | Run utility tests through Node's test runner and `tsx` |
+| `npm test` | Run utility and server-helper tests through Node's test runner and `tsx` |
+| `npm run test:rules` | Run Firestore rules tests against a running Emulator (requires `firebase-tools` and `@firebase/rules-unit-testing`) |
 | `npm run build` | Build the Vite frontend into `dist/` |
 | `npm run preview` | Preview the frontend build without the Express API server |
 | `npm run clean` | Remove the generated `dist/` directory |
@@ -136,6 +139,7 @@ There is no separate ESLint or Prettier configuration in this repository. `typec
 | `GEMINI_MODEL` | No | `gemini-2.5-flash` | Model identifier passed to the Gemini client |
 | `FIREBASE_PROJECT_ID` | Usually no | Project ID from `firebase-applet-config.json` | Expected Firebase token audience and issuer |
 | `PORT` | No | `3000` | Express listening port |
+| `AI_CONSENT_COOKIE_SECRET` | For AI consent | Unset | Unique 32+ character secret used to sign server-enforced consent cookies; generate with `openssl rand -base64 32` |
 | `CSP_ENFORCE` | No | `false` | Enables enforcing Content Security Policy when set to `true` |
 | `NODE_ENV` | No | Runtime-dependent | Controls production headers and static asset serving |
 
@@ -168,7 +172,7 @@ Further documentation:
 - Vital reference checks are general-purpose rules and may not fit an individual's medical history or clinician-set targets.
 - AI summaries, extracted document values, research responses, and nearby-care results can be incomplete or incorrect. Check original documents and verify important details directly.
 - AI requests send the selected content to the configured server and Gemini API. Do not upload identifiable health information until privacy requirements and vendor terms have been reviewed.
-- Firestore IndexedDB persistence is not an encrypted vault. Signing out does not clear the browser's persistent cache. Avoid shared browser profiles and clear site data before handing over a device.
+- Signed-in Firestore data uses a memory-only browser cache; it is not intentionally persisted to IndexedDB. This reduces data remaining after sign-out but means signed-in records are not reliably available after reload while offline.
 - The service worker caches static frontend assets only. AI features require a network connection.
 - The current CI workflow does not test live Firebase/Gemini flows, browser automation, or production deployment. Firestore rules, CSP enforcement, and hosting configuration need environment-specific verification.
 

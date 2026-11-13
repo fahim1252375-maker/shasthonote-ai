@@ -70,6 +70,10 @@ The GitHub Actions workflow runs on pushes to `main`, pull requests targeting `m
 
 These checks cover TypeScript validation, the current utility test suite, and the frontend production build. They do not constitute live Firebase/Gemini integration tests, browser end-to-end tests, or deployment verification.
 
+## Security automation
+
+CodeQL statically analyzes the JavaScript and TypeScript code on pushes and pull requests targeting `main`, with a weekly scheduled scan. Dependabot checks npm dependencies and GitHub Actions for weekly updates. Automated analysis helps identify issues early but does not replace manual security review, Firebase configuration review, or production testing.
+
 ## Run Locally
 
 ### Requirements

@@ -141,7 +141,7 @@ See `MERGE_REPORT.md` for the comparison of the two source packages and the full
 
 - Firestore client cache changed from persistent IndexedDB to explicit memory-only cache for signed-in health records. This reduces local persistence but removes reliable signed-in offline record availability after a reload.
 - Added an authenticated `/api/consent` GET/POST API. The server issues a versioned, UID-bound, HttpOnly, SameSite=Strict consent cookie signed with `AI_CONSENT_COOKIE_SECRET`; AI routes reject requests without a valid cookie. localStorage is now only a UI mirror.
-- Changed Firestore `documents.findings` validation to a hard maximum of ten elements and explicit validation of every allowed index (0–9). This matches the UI's documented maximum and rejects malformed later items.
+- Changed Firestore `documents.findings` validation to a hard maximum of five elements and explicit validation of every allowed index (0–4). A ten-item test exposed Firestore's 1,000-expression evaluation limit, so both rules and UI now enforce a five-item cap; the Emulator suite checks the valid five-item boundary and malformed fifth item.
 - Added Firestore Emulator regression tests for owner access, valid finding lists, malformed later findings and list length boundaries; CI provisions Emulator tooling and runs the rules suite.
 
 ### Remaining production blockers

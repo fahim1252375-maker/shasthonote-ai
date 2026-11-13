@@ -105,7 +105,7 @@ service cloud.firestore {
     }
 
     // Firestore Rules do not support a general loop over arbitrary arrays.
-    // Bound findings to ten entries and explicitly validate every permitted index.
+    // Bound findings to five entries so every allowed item stays within the Rules expression budget.
     function isValidFinding(finding) {
       // Direct access/type checks also fail closed when a required field is missing,
       // so a separate hasAll() pass would duplicate expression work for every item.
@@ -119,17 +119,12 @@ service cloud.firestore {
 
     function areValidFindings(findings) {
       return findings is list &&
-        findings.size() <= 10 &&
+        findings.size() <= 5 &&
         (findings.size() < 1 || isValidFinding(findings[0])) &&
         (findings.size() < 2 || isValidFinding(findings[1])) &&
         (findings.size() < 3 || isValidFinding(findings[2])) &&
         (findings.size() < 4 || isValidFinding(findings[3])) &&
-        (findings.size() < 5 || isValidFinding(findings[4])) &&
-        (findings.size() < 6 || isValidFinding(findings[5])) &&
-        (findings.size() < 7 || isValidFinding(findings[6])) &&
-        (findings.size() < 8 || isValidFinding(findings[7])) &&
-        (findings.size() < 9 || isValidFinding(findings[8])) &&
-        (findings.size() < 10 || isValidFinding(findings[9]));
+        (findings.size() < 5 || isValidFinding(findings[4]));
     }
 
     // 3. Source Document Validation (SourceDocument interface)

@@ -1,0 +1,39 @@
+name: Feature request
+description: Suggest an improvement to ShasthoNote AI.
+title: "[Feature]: "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Suggestions should preserve user consent, privacy, data portability, and the boundary between personal information organisation and clinical decision-making.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or user need
+      description: What specific problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the behaviour you would like to see.
+    validations:
+      required: true
+  - type: textarea
+    id: privacy
+    attributes:
+      label: Privacy or data-flow considerations
+      description: Would this involve health data, a new external service, or additional permissions?
+    validations:
+      required: false
+  - type: checkboxes
+    id: boundaries
+    attributes:
+      label: Safety and privacy
+      options:
+        - label: This proposal does not require publishing real or identifiable health data.
+          required: true
+        - label: I understand the project is not intended to diagnose, prescribe, or replace a clinician.
+          required: true

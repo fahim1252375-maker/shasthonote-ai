@@ -73,3 +73,10 @@ Returns `{ success, data: { audioTitle, script, keyPoints, durationEstimate } }`
 ## Limits
 
 The server uses an Express JSON body parser capped at 18 MB, endpoint-specific field limits, and an in-memory per-user rate limit of 20 requests per minute per server process. Production deployments with multiple instances must use a shared rate-limit store and configure additional quotas/monitoring.
+
+
+## Server-enforced AI consent
+
+- `GET /api/consent` — requires a Firebase ID token; returns whether the current UID has a valid server-signed AI consent cookie.
+- `POST /api/consent` — requires a Firebase ID token and JSON `{ "granted": boolean, "version": "ai-data-use-v1" }`. Granting consent issues a 180-day HttpOnly, UID-bound cookie; declining clears it.
+- The server requires `AI_CONSENT_COOKIE_SECRET` (at least 32 characters). Without it, consent cannot be granted and AI endpoints fail closed.

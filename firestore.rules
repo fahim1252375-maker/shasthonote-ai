@@ -104,6 +104,29 @@ service cloud.firestore {
         (!('missingInformationFlags' in data) || (data.missingInformationFlags is list && data.missingInformationFlags.size() <= 50));
     }
 
+    // Firestore Rules do not support a general loop over arbitrary arrays.
+    // Bound findings to five entries so every allowed item stays within the Rules expression budget.
+    function isValidFinding(finding) {
+      // Direct access/type checks also fail closed when a required field is missing,
+      // so a separate hasAll() pass would duplicate expression work for every item.
+      return finding is map &&
+        finding.keys().hasOnly(['testOrItem', 'value', 'referenceRange', 'status']) &&
+        finding.testOrItem is string && finding.testOrItem.size() <= 256 &&
+        finding.value is string && finding.value.size() <= 256 &&
+        finding.status is string && finding.status.size() <= 64 &&
+        (!('referenceRange' in finding) || (finding.referenceRange is string && finding.referenceRange.size() <= 256));
+    }
+
+    function areValidFindings(findings) {
+      return findings is list &&
+        findings.size() <= 5 &&
+        (findings.size() < 1 || isValidFinding(findings[0])) &&
+        (findings.size() < 2 || isValidFinding(findings[1])) &&
+        (findings.size() < 3 || isValidFinding(findings[2])) &&
+        (findings.size() < 4 || isValidFinding(findings[3])) &&
+        (findings.size() < 5 || isValidFinding(findings[4]));
+    }
+
     // 3. Source Document Validation (SourceDocument interface)
     function isValidSourceDocument(data) {
       return data.keys().hasAll([
@@ -138,19 +161,7 @@ service cloud.firestore {
         (!('analysisSummary' in data) || (data.analysisSummary is string && data.analysisSummary.size() <= 50000)) &&
         (!('tags' in data) || (data.tags is string && data.tags.size() <= 1000)) &&
         (!('ocrConfidence' in data) || (data.ocrConfidence is string && data.ocrConfidence.size() <= 64)) &&
-        (!('findings' in data) || (
-          data.findings is list &&
-          data.findings.size() <= 100 &&
-          (data.findings.size() == 0 || (
-            data.findings[0] is map &&
-            data.findings[0].keys().hasAll(['testOrItem', 'value', 'status']) &&
-            data.findings[0].keys().hasOnly(['testOrItem', 'value', 'referenceRange', 'status']) &&
-            data.findings[0].testOrItem is string && data.findings[0].testOrItem.size() <= 256 &&
-            data.findings[0].value is string && data.findings[0].value.size() <= 256 &&
-            data.findings[0].status is string && data.findings[0].status.size() <= 64 &&
-            (!('referenceRange' in data.findings[0]) || (data.findings[0].referenceRange is string && data.findings[0].referenceRange.size() <= 256))
-          ))
-        ));
+        (!('findings' in data) || areValidFindings(data.findings));
     }
 
     // 4. Appointment Validation (Appointment interface)

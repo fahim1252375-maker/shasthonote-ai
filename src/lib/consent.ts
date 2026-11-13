@@ -1,7 +1,12 @@
 /**
- * Per-account record of the user's choice about sending selected text/files to the AI server.
- * Stored only in this browser (localStorage), keyed by Firebase UID, so switching accounts
- * on a shared device never reuses someone else's consent.
+ * The current AI data-use notice version. The server binds its signed consent cookie to this.
+ */
+export const AI_CONSENT_VERSION = 'ai-data-use-v1';
+
+/**
+ * Non-authoritative UI mirror of the user's choice, keyed by Firebase UID.
+ * The backend does not trust this localStorage value: all AI routes require a
+ * server-issued, HttpOnly, UID-bound consent cookie as well.
  */
 export type AiConsentState = 'granted' | 'declined' | 'unset';
 

@@ -199,7 +199,7 @@ Advice:
       if (res.ok && json.success && json.data && typeof json.data === 'object') {
         setAnalysis(json.data);
         const findings = Array.isArray(json.data.extractedFindings)
-          ? json.data.extractedFindings.slice(0, 10).filter((finding: any) => finding && typeof finding.testOrItem === 'string' && typeof finding.value === 'string')
+          ? json.data.extractedFindings.slice(0, 5).filter((finding: any) => finding && typeof finding.testOrItem === 'string' && typeof finding.value === 'string')
             .map((finding: any) => ({
               testOrItem: finding.testOrItem.slice(0, 256),
               value: finding.value.slice(0, 256),

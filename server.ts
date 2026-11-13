@@ -7,6 +7,13 @@ import { createPublicKey, randomUUID, verify as verifySignature } from 'node:cry
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import { GoogleGenAI } from '@google/genai';
+import {
+  AI_CONSENT_COOKIE_MAX_AGE_SECONDS,
+  AI_CONSENT_COOKIE_NAME,
+  issueAiConsentCookie,
+  verifyAiConsentCookie,
+} from './server/aiConsent';
+import { AI_CONSENT_VERSION } from './src/lib/consent';
 
 dotenv.config();
 
@@ -165,20 +172,18 @@ async function verifyFirebaseIdToken(token: string): Promise<FirebaseIdTokenPayl
   return tokenPayload;
 }
 
-// Every Gemini endpoint requires a valid Firebase ID token. Guest/demo users are not trusted.
-app.use('/api/gemini', async (req, res, next) => {
+type AuthenticatedRequest = express.Request & { firebaseAuth?: { uid: string; email?: string } };
+
+async function requireFirebaseUser(req: express.Request, res: express.Response, next: express.NextFunction) {
   const authorization = req.header('authorization') || '';
   const match = authorization.match(/^Bearer (.+)$/i);
   if (!match) {
-    return res.status(401).json({ success: false, error: 'Sign in with Google to use AI features.' });
+    return res.status(401).json({ success: false, error: 'Sign in with Google to continue.' });
   }
 
   try {
     const verified = await verifyFirebaseIdToken(match[1]);
-    (req as express.Request & { firebaseAuth?: { uid: string; email?: string } }).firebaseAuth = {
-      uid: verified.sub,
-      email: verified.email,
-    };
+    (req as AuthenticatedRequest).firebaseAuth = { uid: verified.sub, email: verified.email };
     return next();
   } catch (error) {
     if (error instanceof FirebaseKeyServiceError) {
@@ -186,7 +191,88 @@ app.use('/api/gemini', async (req, res, next) => {
     }
     return res.status(401).json({ success: false, error: 'Your sign-in session is invalid or expired. Please sign in again.' });
   }
+}
+
+function readCookie(req: express.Request, name: string): string | null {
+  const header = req.headers.cookie;
+  if (!header) return null;
+  for (const part of header.split(';')) {
+    const separator = part.indexOf('=');
+    if (separator < 0) continue;
+    if (part.slice(0, separator).trim() === name) return part.slice(separator + 1).trim();
+  }
+  return null;
+}
+
+function writeAiConsentCookie(res: express.Response, value: string, maxAge: number) {
+  const attributes = [
+    `${AI_CONSENT_COOKIE_NAME}=${value}`,
+    'Path=/api',
+    `Max-Age=${maxAge}`,
+    'HttpOnly',
+    'SameSite=Strict',
+  ];
+  if (IS_PRODUCTION) attributes.push('Secure');
+  res.setHeader('Set-Cookie', attributes.join('; '));
+}
+
+function requireServerAiConsent(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const secret = process.env.AI_CONSENT_COOKIE_SECRET || '';
+  if (secret.length < 32) {
+    return res.status(503).json({
+      success: false,
+      error: 'Server-side AI consent is not configured. Set AI_CONSENT_COOKIE_SECRET before enabling AI features.',
+    });
+  }
+  const uid = (req as AuthenticatedRequest).firebaseAuth?.uid || '';
+  const cookie = readCookie(req, AI_CONSENT_COOKIE_NAME);
+  if (!verifyAiConsentCookie(cookie, uid, secret)) {
+    return res.status(403).json({
+      success: false,
+      error: 'Accept the AI data-use notice in Privacy Center before using AI features.',
+      code: 'AI_CONSENT_REQUIRED',
+    });
+  }
+  return next();
+}
+
+// Consent status is bound to the Firebase UID and verified by the server, never localStorage.
+app.get('/api/consent', requireFirebaseUser, (req, res) => {
+  const secret = process.env.AI_CONSENT_COOKIE_SECRET || '';
+  const uid = (req as AuthenticatedRequest).firebaseAuth?.uid || '';
+  const granted = secret.length >= 32 &&
+    verifyAiConsentCookie(readCookie(req, AI_CONSENT_COOKIE_NAME), uid, secret);
+  res.json({ granted });
 });
+
+app.post('/api/consent', express.json({ limit: '2kb' }), requireFirebaseUser, (req, res) => {
+  const body = req.body as { granted?: unknown; version?: unknown };
+  if (typeof body?.granted !== 'boolean' || body.version !== AI_CONSENT_VERSION) {
+    return res.status(400).json({ success: false, error: 'A valid AI consent choice and current notice version are required.' });
+  }
+
+  // Declining or withdrawing consent must always be possible, even during secret rotation.
+  if (!body.granted) {
+    writeAiConsentCookie(res, '', 0);
+    return res.status(204).end();
+  }
+
+  const secret = process.env.AI_CONSENT_COOKIE_SECRET || '';
+  if (secret.length < 32) {
+    return res.status(503).json({
+      success: false,
+      error: 'Server-side AI consent is not configured. Set AI_CONSENT_COOKIE_SECRET to a unique value of at least 32 characters.',
+    });
+  }
+
+  const uid = (req as AuthenticatedRequest).firebaseAuth?.uid || '';
+  const cookie = issueAiConsentCookie(uid, secret);
+  writeAiConsentCookie(res, cookie, AI_CONSENT_COOKIE_MAX_AGE_SECONDS);
+  return res.status(204).end();
+});
+
+// Every Gemini endpoint requires Firebase authentication and an explicit server-verified consent.
+app.use('/api/gemini', requireFirebaseUser, requireServerAiConsent);
 
 // Basic per-process protection against accidental or abusive Gemini API usage.
 // Production deployments with multiple instances should use a shared rate-limit store.

@@ -6,13 +6,12 @@ import {
   getFirestore,
   initializeFirestore,
   limit,
-  persistentLocalCache,
-  persistentMultipleTabManager,
+  memoryLocalCache,
   query,
   where,
 } from 'firebase/firestore';
 import firebaseConfig from '../../firebase-applet-config.json';
-import { AI_CONSENT_REQUIRED_MESSAGE, hasAiConsent } from './consent';
+import { AI_CONSENT_REQUIRED_MESSAGE, AI_CONSENT_VERSION, hasAiConsent } from './consent';
 
 // Reuse the existing app instance during Vite HMR.
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
@@ -22,20 +21,16 @@ const databaseId =
     : undefined;
 
 /**
- * Keep the signed-in user's Firestore cache in IndexedDB across reloads and tabs.
- * Firestore queues writes while offline and syncs them after reconnecting. If the
- * browser blocks persistent storage (private mode / unsupported environment), fall
- * back to the normal in-memory Firestore instance without breaking app startup.
+ * Health records are intentionally restricted to Firestore's in-memory cache.
+ * Persistent browser storage (IndexedDB) is not an encrypted vault and can survive
+ * sign-out or device hand-off. This trades signed-in offline persistence for a
+ * smaller local exposure window; guest demo data remains synthetic/local-only.
  */
 function createFirestore(): ReturnType<typeof getFirestore> {
   try {
-    return initializeFirestore(
-      app,
-      { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) },
-      databaseId,
-    );
+    return initializeFirestore(app, { localCache: memoryLocalCache() }, databaseId);
   } catch (error) {
-    console.warn('Persistent Firestore cache is unavailable; using in-memory cache instead:', error);
+    console.warn('Could not initialise the explicit in-memory Firestore cache; using the default in-memory cache:', error);
     return databaseId ? getFirestore(app, databaseId) : getFirestore(app);
   }
 }
@@ -44,6 +39,49 @@ export const db = createFirestore();
 
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+
+/**
+ * Read the server-authoritative AI consent state. The server issues an HttpOnly,
+ * UID-bound cookie only after an authenticated consent action.
+ */
+export async function getServerAiConsent(): Promise<boolean> {
+  const currentUser = auth.currentUser;
+  if (!currentUser) return false;
+  const idToken = await currentUser.getIdToken();
+  const response = await fetch('/api/consent', {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${idToken}` },
+    credentials: 'same-origin',
+    cache: 'no-store',
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({})) as { error?: string };
+    throw new Error(body.error || 'Could not check the server-side AI consent state.');
+  }
+  const body = await response.json() as { granted?: boolean };
+  return body.granted === true;
+}
+
+/** Record the user's choice with the authenticated server before updating local UI state. */
+export async function setServerAiConsent(granted: boolean): Promise<void> {
+  const currentUser = auth.currentUser;
+  if (!currentUser) throw new Error('Sign in before changing AI consent.');
+  const idToken = await currentUser.getIdToken();
+  const response = await fetch('/api/consent', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      'Content-Type': 'application/json',
+    },
+    credentials: 'same-origin',
+    cache: 'no-store',
+    body: JSON.stringify({ granted, version: AI_CONSENT_VERSION }),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({})) as { error?: string };
+    throw new Error(body.error || 'Could not save the AI consent choice on the server.');
+  }
+}
 
 export type FirestoreConnectionStatus =
   | 'connected'

@@ -46,22 +46,22 @@ test('owner can create a document with valid findings', async () => {
   await assertSucceeds(setDoc(doc(db, 'documents', 'document-1'), validDocument('owner-1')));
 });
 
-test('owner can create a document with ten valid findings', async () => {
+test('owner can create a document with five valid findings', async () => {
   const db = testEnv.authenticatedContext('owner-1').firestore();
-  const findings = Array.from({ length: 10 }, (_, index) => validFinding(index));
+  const findings = Array.from({ length: 5 }, (_, index) => validFinding(index));
   await assertSucceeds(setDoc(doc(db, 'documents', 'document-1'), validDocument('owner-1', findings)));
 });
 
-test('rules validate every finding, including the tenth element', async () => {
+test('rules validate every finding, including the fifth element', async () => {
   const db = testEnv.authenticatedContext('owner-1').firestore();
-  const findings = Array.from({ length: 10 }, (_, index) => validFinding(index));
-  findings[9] = { ...validFinding(9), unexpectedField: 'must be rejected' };
+  const findings = Array.from({ length: 5 }, (_, index) => validFinding(index));
+  findings[4] = { ...validFinding(4), unexpectedField: 'must be rejected' };
   await assertFails(setDoc(doc(db, 'documents', 'document-1'), validDocument('owner-1', findings)));
 });
 
-test('rules reject more than ten findings', async () => {
+test('rules reject more than five findings', async () => {
   const db = testEnv.authenticatedContext('owner-1').firestore();
-  const findings = Array.from({ length: 11 }, (_, index) => validFinding(index));
+  const findings = Array.from({ length: 6 }, (_, index) => validFinding(index));
   await assertFails(setDoc(doc(db, 'documents', 'document-1'), validDocument('owner-1', findings)));
 });
 

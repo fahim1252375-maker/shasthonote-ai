@@ -107,8 +107,9 @@ service cloud.firestore {
     // Firestore Rules do not support a general loop over arbitrary arrays.
     // Bound findings to ten entries and explicitly validate every permitted index.
     function isValidFinding(finding) {
+      // Direct access/type checks also fail closed when a required field is missing,
+      // so a separate hasAll() pass would duplicate expression work for every item.
       return finding is map &&
-        finding.keys().hasAll(['testOrItem', 'value', 'status']) &&
         finding.keys().hasOnly(['testOrItem', 'value', 'referenceRange', 'status']) &&
         finding.testOrItem is string && finding.testOrItem.size() <= 256 &&
         finding.value is string && finding.value.size() <= 256 &&

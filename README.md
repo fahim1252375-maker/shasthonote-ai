@@ -9,12 +9,6 @@
 
 </div>
 
-<!-- Project README: ShasthoNote AI -->
-
-<p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:14243A,50:0F766E,100:2563EB&height=190&section=header&text=ShasthoNote%20AI&fontSize=42&fontColor=ffffff&fontAlignY=38&desc=Organise%20health%20information.%20Prepare%20for%20better%20conversations.&descAlignY=62&descSize=13" alt="ShasthoNote AI — Health information workspace" />
-</p>
-
 <p align="center">
   <strong>A Bangla-English workspace for organising personal health information before a conversation with a healthcare professional.</strong>
 </p>

@@ -236,6 +236,47 @@ function requireServerAiConsent(req: express.Request, res: express.Response, nex
   return next();
 }
 
+// Apply an IP-based limit before Firebase token verification. Token verification may
+// refresh signing keys over the network, so limiting only after authentication is too late.
+// Express does not trust forwarded IP headers by default.
+const preAuthRateBuckets = new Map<string, { count: number; resetAt: number }>();
+const PRE_AUTH_RATE_WINDOW_MS = 60_000;
+const PRE_AUTH_RATE_LIMIT = 60;
+let lastPreAuthPruneAt = 0;
+
+function preAuthRateLimit(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const now = Date.now();
+  if (now - lastPreAuthPruneAt >= 30_000) {
+    lastPreAuthPruneAt = now;
+    for (const [key, bucket] of preAuthRateBuckets) {
+      if (bucket.resetAt <= now) preAuthRateBuckets.delete(key);
+    }
+    while (preAuthRateBuckets.size > 10_000) {
+      const oldestKey = preAuthRateBuckets.keys().next().value;
+      if (oldestKey === undefined) break;
+      preAuthRateBuckets.delete(oldestKey);
+    }
+  }
+
+  const ip = req.ip || req.socket.remoteAddress || 'unknown';
+  const routeGroup = req.originalUrl.startsWith('/api/gemini') ? 'gemini' : 'consent';
+  const key = `${routeGroup}:${ip}`;
+  const current = preAuthRateBuckets.get(key);
+  if (!current || current.resetAt <= now) {
+    preAuthRateBuckets.set(key, { count: 1, resetAt: now + PRE_AUTH_RATE_WINDOW_MS });
+    return next();
+  }
+  if (current.count >= PRE_AUTH_RATE_LIMIT) {
+    res.setHeader('Retry-After', String(Math.ceil((current.resetAt - now) / 1000)));
+    return res.status(429).json({ success: false, error: 'Too many requests. Please try again shortly.' });
+  }
+  current.count += 1;
+  return next();
+}
+
+// Protect consent routes before request parsing and Firebase token verification.
+app.use('/api/consent', preAuthRateLimit);
+
 // Consent status is bound to the Firebase UID and verified by the server, never localStorage.
 app.get('/api/consent', requireFirebaseUser, (req, res) => {
   const secret = process.env.AI_CONSENT_COOKIE_SECRET || '';
@@ -271,8 +312,8 @@ app.post('/api/consent', express.json({ limit: '2kb' }), requireFirebaseUser, (r
   return res.status(204).end();
 });
 
-// Every Gemini endpoint requires Firebase authentication and an explicit server-verified consent.
-app.use('/api/gemini', requireFirebaseUser, requireServerAiConsent);
+// Apply the IP limiter before Firebase authentication and server-verified AI consent.
+app.use('/api/gemini', preAuthRateLimit, requireFirebaseUser, requireServerAiConsent);
 
 // Basic per-process protection against accidental or abusive Gemini API usage.
 // Production deployments with multiple instances should use a shared rate-limit store.

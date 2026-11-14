@@ -969,8 +969,40 @@ if (process.env.NODE_ENV !== 'production') {
   app.use(vite.middlewares);
 } else {
   app.use(express.static(path.resolve(__dirname, 'dist')));
-  app.get('/{*splat}', (_req, res) => {
-    res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
+
+  // Bound repeated SPA fallback requests. Static assets are served above and are unaffected.
+  // Express does not trust forwarded IP headers by default, so req.ip is not client-controlled.
+  const spaFallbackBuckets = new Map<string, { count: number; resetAt: number }>();
+  const SPA_FALLBACK_WINDOW_MS = 60_000;
+  const SPA_FALLBACK_LIMIT = 120;
+  let lastSpaFallbackPruneAt = 0;
+
+  app.get('/{*splat}', (req, res) => {
+    const now = Date.now();
+    if (now - lastSpaFallbackPruneAt >= 30_000) {
+      lastSpaFallbackPruneAt = now;
+      for (const [key, bucket] of spaFallbackBuckets) {
+        if (bucket.resetAt <= now) spaFallbackBuckets.delete(key);
+      }
+      while (spaFallbackBuckets.size > 10_000) {
+        const oldestKey = spaFallbackBuckets.keys().next().value;
+        if (oldestKey === undefined) break;
+        spaFallbackBuckets.delete(oldestKey);
+      }
+    }
+
+    const key = req.ip || req.socket.remoteAddress || 'unknown';
+    const current = spaFallbackBuckets.get(key);
+    if (!current || current.resetAt <= now) {
+      spaFallbackBuckets.set(key, { count: 1, resetAt: now + SPA_FALLBACK_WINDOW_MS });
+    } else if (current.count >= SPA_FALLBACK_LIMIT) {
+      res.setHeader('Retry-After', String(Math.ceil((current.resetAt - now) / 1000)));
+      return res.status(429).type('text/plain').send('Too many requests. Please try again shortly.');
+    } else {
+      current.count += 1;
+    }
+
+    return res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
   });
 }
 

@@ -60,27 +60,9 @@ const GUEST_PROFILE: UserProfile = {
   displayName: 'Rahim Ahmed (Guest)',
 };
 
-// Guest demo data is stored separately from signed-in users' Firestore data.
-// Legacy unscoped keys (shastho_notes/docs/apts) are intentionally not loaded:
-// they could contain another account's private health information.
-function readGuestData<T>(key: string, fallback: T[]): T[] {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fallback;
-    const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as T[]) : fallback;
-  } catch {
-    return fallback;
-  }
-}
-
-function writeGuestData<T>(key: string, value: T[]): void {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch (error) {
-    console.warn('Could not persist guest demo data in this browser:', error);
-  }
-}
+// Guest health data remains in memory only. Signed-in records are stored in
+// owner-scoped Firestore collections; sensitive health records are never persisted
+// to browser localStorage.
 
 /** Replace an item with the same id in place (keeps list order), or add it to the top. */
 function upsertInPlace<T extends { id: string }>(list: T[], item: T): T[] {
@@ -97,21 +79,12 @@ export default function App() {
   const [authReady, setAuthReady] = useState(false);
   const [firestoreLoadError, setFirestoreLoadError] = useState<string | null>(null);
 
-  const [notes, setNotes] = useState<HealthNote[]>(() =>
-    readGuestData<HealthNote>('shastho:guest:notes', INITIAL_HEALTH_NOTES),
-  );
-  const [documents, setDocuments] = useState<SourceDocument[]>(() =>
-    readGuestData<SourceDocument>('shastho:guest:documents', INITIAL_DOCUMENTS),
-  );
-  const [appointments, setAppointments] = useState<Appointment[]>(() =>
-    readGuestData<Appointment>('shastho:guest:appointments', INITIAL_APPOINTMENTS),
-  );
-  const [studyResources, setStudyResources] = useState<StudyResource[]>(() =>
-    readGuestData<StudyResource>('shastho:guest:study_resources', []),
-  );
-
-  const [vitals, setVitals] = useState<VitalReading[]>(() => readGuestData<VitalReading>('shastho:guest:vitals', []));
-  const [medications, setMedications] = useState<Medication[]>(() => readGuestData<Medication>('shastho:guest:medications', []));
+  const [notes, setNotes] = useState<HealthNote[]>(INITIAL_HEALTH_NOTES);
+  const [documents, setDocuments] = useState<SourceDocument[]>(INITIAL_DOCUMENTS);
+  const [appointments, setAppointments] = useState<Appointment[]>(INITIAL_APPOINTMENTS);
+  const [studyResources, setStudyResources] = useState<StudyResource[]>([]);
+  const [vitals, setVitals] = useState<VitalReading[]>([]);
+  const [medications, setMedications] = useState<Medication[]>([]);
   const [consentState, setConsentState] = useState<AiConsentState>('unset');
   const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -121,42 +94,22 @@ export default function App() {
   const [selectedDocument, setSelectedDocument] = useState<SourceDocument | null>(documents[0] || null);
   const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState(false);
 
-  // Persist only guest demo data locally. Signed-in records stay in Firestore.
+  // Remove plaintext guest health records written by older app versions.
+  // Guest data is now in-memory only; signed-in records remain in owner-scoped Firestore.
   useEffect(() => {
-    if (authReady && !auth.currentUser) {
-      writeGuestData('shastho:guest:notes', notes);
+    try {
+      [
+        'shastho:guest:notes',
+        'shastho:guest:documents',
+        'shastho:guest:appointments',
+        'shastho:guest:study_resources',
+        'shastho:guest:vitals',
+        'shastho:guest:medications',
+      ].forEach((key) => window.localStorage.removeItem(key));
+    } catch (error) {
+      console.warn('Could not clear legacy guest health data from this browser:', error);
     }
-  }, [notes, authReady]);
-
-  useEffect(() => {
-    if (authReady && !auth.currentUser) {
-      writeGuestData('shastho:guest:documents', documents);
-    }
-  }, [documents, authReady]);
-
-  useEffect(() => {
-    if (authReady && !auth.currentUser) {
-      writeGuestData('shastho:guest:appointments', appointments);
-    }
-  }, [appointments, authReady]);
-
-  useEffect(() => {
-    if (authReady && !auth.currentUser) {
-      writeGuestData('shastho:guest:study_resources', studyResources);
-    }
-  }, [studyResources, authReady]);
-
-  useEffect(() => {
-    if (authReady && !auth.currentUser) {
-      writeGuestData('shastho:guest:vitals', vitals);
-    }
-  }, [vitals, authReady]);
-
-  useEffect(() => {
-    if (authReady && !auth.currentUser) {
-      writeGuestData('shastho:guest:medications', medications);
-    }
-  }, [medications, authReady]);
+  }, []);
 
   // Keep language metadata and network status in sync with the browser.
   useEffect(() => {
@@ -195,12 +148,12 @@ export default function App() {
       if (!firebaseUser) {
         setFirestoreLoadError(null);
         setUser(GUEST_PROFILE);
-        setNotes(readGuestData<HealthNote>('shastho:guest:notes', INITIAL_HEALTH_NOTES));
-        setDocuments(readGuestData<SourceDocument>('shastho:guest:documents', INITIAL_DOCUMENTS));
-        setAppointments(readGuestData<Appointment>('shastho:guest:appointments', INITIAL_APPOINTMENTS));
-        setStudyResources(readGuestData<StudyResource>('shastho:guest:study_resources', []));
-        setVitals(readGuestData<VitalReading>('shastho:guest:vitals', []));
-        setMedications(readGuestData<Medication>('shastho:guest:medications', []));
+        setNotes(INITIAL_HEALTH_NOTES);
+        setDocuments(INITIAL_DOCUMENTS);
+        setAppointments(INITIAL_APPOINTMENTS);
+        setStudyResources([]);
+        setVitals([]);
+        setMedications([]);
         setConsentState('unset');
         setIsConsentModalOpen(false);
         setSelectedNote(null);

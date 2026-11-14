@@ -970,8 +970,12 @@ if (process.env.NODE_ENV !== 'production') {
 } else {
   app.use(express.static(path.resolve(__dirname, 'dist')));
 
-  // Bound repeated SPA fallback requests. Static assets are served above and are unaffected.
-  // Express does not trust forwarded IP headers by default, so req.ip is not client-controlled.
+  // Read the SPA shell once at startup instead of touching the filesystem for every fallback request.
+  // This keeps the request handler lightweight; static assets continue to use express.static above.
+  const spaIndexHtml = readFileSync(path.resolve(__dirname, 'dist', 'index.html'), 'utf8');
+
+  // Bound repeated SPA fallback requests. Express does not trust forwarded IP headers by default,
+  // so req.ip is derived from the direct connection unless trusted proxies are explicitly configured.
   const spaFallbackBuckets = new Map<string, { count: number; resetAt: number }>();
   const SPA_FALLBACK_WINDOW_MS = 60_000;
   const SPA_FALLBACK_LIMIT = 120;
@@ -1002,7 +1006,7 @@ if (process.env.NODE_ENV !== 'production') {
       current.count += 1;
     }
 
-    return res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
+    return res.status(200).type('html').send(spaIndexHtml);
   });
 }
 

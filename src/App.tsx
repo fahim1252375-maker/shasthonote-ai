@@ -105,6 +105,10 @@ export default function App() {
         'shastho:guest:study_resources',
         'shastho:guest:vitals',
         'shastho:guest:medications',
+        // Legacy unscoped keys from older releases may contain another user's health data.
+        'shastho_notes',
+        'shastho_docs',
+        'shastho_apts',
       ].forEach((key) => window.localStorage.removeItem(key));
     } catch (error) {
       console.warn('Could not clear legacy guest health data from this browser:', error);

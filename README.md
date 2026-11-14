@@ -8,6 +8,8 @@
   <strong>A Bangla-English workspace for organising personal health information before a conversation with a healthcare professional.</strong>
 </p>
 
+<p align="center"><strong>Live demo:</strong> <a href="https://shasthonote-ai.onrender.com">Open ShasthoNote AI on Render</a></p>
+
 <p align="center">
   <a href="https://github.com/fahim1252375-maker/shasthonote-ai/actions/workflows/ci.yml"><img src="https://github.com/fahim1252375-maker/shasthonote-ai/actions/workflows/ci.yml/badge.svg?branch=main" alt="Continuous integration" /></a>
   <img src="https://img.shields.io/badge/Version-0.5.0-2563EB?style=flat-square" alt="Version 0.5.0" />

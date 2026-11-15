@@ -1,8 +1,13 @@
-<!-- Project README: ShasthoNote AI -->
+<div align="center">
 
-<p align="center">
-  <img src="https://capsule-render.vercel.app/api?type=waving&color=0:14243A,50:0F766E,100:2563EB&height=190&section=header&text=ShasthoNote%20AI&fontSize=42&fontColor=ffffff&fontAlignY=38&desc=Organise%20health%20information.%20Prepare%20for%20better%20conversations.&descAlignY=62&descSize=13" alt="ShasthoNote AI — Health information workspace" />
-</p>
+<img src="./assets/brand/project-banner.svg" width="100%" alt="ShasthoNote AI project header" />
+
+<img src="https://img.shields.io/badge/VISUAL%20SYSTEM-GITHUB%20DARK%20PRO-161B22?style=flat-square&labelColor=161B22&color=58A6FF" alt="GitHub Dark Pro visual system" />
+<img src="https://img.shields.io/badge/PROJECT-STUDENT%20BUILD-161B22?style=flat-square&labelColor=161B22&color=3FB950" alt="Student-built project" />
+
+[Social preview SVG source · 1280 × 640](./assets/brand/social-preview.svg)
+
+</div>
 
 <p align="center">
   <strong>A Bangla-English workspace for organising personal health information before a conversation with a healthcare professional.</strong>
